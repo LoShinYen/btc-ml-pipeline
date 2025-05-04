@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()  # 讀取 .env
 
+# API_KEY 設定
+FERD_API_KEY = os.getenv('FERD_API_KEY')
+
 # 交易所設定
 EXCHANGE_NAME = os.getenv('EXCHANGE_NAME', 'binance')                                       # 交易所名稱
 SYMBOL = os.getenv('SYMBOL', 'BTC/USDT')                                                    # 交易對
@@ -20,6 +23,7 @@ MODEL_DIR = os.getenv('MODEL_DIR', 'models/xgb_model.json')                     
 OUTPUT_PREDICT_DIR = os.getenv('OUTPUT_PREDICT_DIR', 'output/predict')                      # 預測資料夾
 
 # 輸出檔案名稱
+FERD_FILE = os.getenv('FERD_FILE', 'us_macro_data_2018_onwards.csv')                                                # FRED 經濟指標資料    
 KLINE_ONE_H_RAW_FILE = os.getenv('KLINE_ONE_H_RAW_FILE', 'btc_1h_kline.csv')                                        # 原始K線資料
 FEAR_GREED_RAW_FILE = os.getenv('FEAR_GREED_RAW_FILE', 'fear_greed_index.csv')                                      # 恐懼貪婪指數
 PROCESSED_FILE = os.getenv('PROCESSED_FILE', 'btc_1h_kline_processed.csv')                                          # 處理後的K線資料
