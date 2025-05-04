@@ -39,12 +39,12 @@ btc-ml-pipeline/
 
 ## 模型評估與分析
 
-### Precision / Recall / F1 閾值分析
+<!-- ### Precision / Recall / F1 閾值分析 -->
 
-#### 所有特徵模型
+### Precision / Recall / F1 閾值分析
 ![所有特徵F1分析](./Document/FERD/top_30_precision_recall_threshold.png)
 
-#### 前三十特徵模型
+### 前三十特徵模型
 ![前三十特徵分析](./Document/FERD/top_30_feature_importance.png)
 
 
