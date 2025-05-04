@@ -3,7 +3,7 @@ import time
 import pandas as pd
 import numpy as np
 
-from src.config import RAW_DIR, PROCESSED_DIR, TRAIN_DIR, TEST_DIR, KLINE_ONE_H_RAW_FILE, PROCESSED_FILE, TRAIN_FILE, TEST_FILE, FEAR_GREED_RAW_FILE
+from src.config import RAW_DIR, PROCESSED_DIR, TRAIN_DIR, TEST_DIR, KLINE_ONE_H_RAW_FILE, PROCESSED_FILE, TRAIN_FILE, TEST_FILE, FEAR_GREED_RAW_FILE, FERD_FILE
 
 def check_dir():
     """
@@ -34,14 +34,26 @@ def prepare_training_data(raw_df):
     Returns:
         pd.DataFrame: 完整的訓練資料。
     """
+    # 合併 BTC K 線資料與 Fear & Greed Index，並將每日指數展開至每小時，
+    # 使其支援連續時間序列的 rolling 計算。
     raw_df = merge_fear_greed(raw_df)
+
+    # 合併 FRED 提供的每月宏觀經濟資料（CPI, PCE, FEDFUNDS 等），
+    # 使用 forward-fill 將其延伸至每小時，對齊 BTC 資料時間。
+    raw_df = merge_macro_data(raw_df)   
+
+
+    # 對 BTC 1hr K 線資料執行完整特徵工程，涵蓋技術分析指標、成交量、K 線形態、
     raw_df = feature_engineering(raw_df)
+    
+    # 根據未來報酬率標記是否應該買入。
     raw_df = generate_labels(
         raw_df,
         future_hours=6,
         take_profit=0.02,
         stop_loss=-0.01
     )
+    
     raw_df = raw_df.dropna()
     
     print(f"移除NA後剩餘 {len(raw_df)} 筆資料")
@@ -96,6 +108,33 @@ def merge_fear_greed(df):
         merged_df['fear_greed_label'] = merged_df['fear_greed_level'].astype('category').cat.codes
 
     return merged_df
+
+def merge_macro_data(df):
+    """
+    合併 FRED 提供的每月宏觀經濟資料（CPI, PCE, FEDFUNDS 等），
+    使用 forward-fill 將其延伸至每小時，對齊 BTC 資料時間。
+    """
+    macro_path = os.path.join(RAW_DIR, FERD_FILE)
+    macro_df = pd.read_csv(macro_path)
+
+    # 轉為 datetime 並保留 UTC
+    macro_df.rename(columns={macro_df.columns[0]: "date"}, inplace=True)
+    macro_df['date'] = pd.to_datetime(macro_df['date'], utc=True)
+
+    # 設定 index 為 date，便於時間對齊
+    macro_df = macro_df.set_index('date')
+
+    # 建立小時時間序列（與 kline 資料對齊）
+    hourly_range = pd.date_range(df['timestamp'].min(), df['timestamp'].max(), freq='h', tz='UTC')
+    hourly_df = pd.DataFrame(index=hourly_range)
+    
+    # forward fill macro 數據
+    macro_hourly = hourly_df.join(macro_df, how='left').ffill().reset_index()
+    macro_hourly.rename(columns={"index": "timestamp"}, inplace=True)
+
+    # 合併到主資料上
+    df = pd.merge(df, macro_hourly, on="timestamp", how="left")
+    return df
 
 def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -294,8 +333,3 @@ def main():
     except Exception as e:
         print(f"❌ 發生錯誤: {e}")
 
-if __name__ == '__main__':
-    start_time = time.time()
-    main()
-    end_time = time.time()
-    print(f"執行時間: {end_time - start_time} 秒")

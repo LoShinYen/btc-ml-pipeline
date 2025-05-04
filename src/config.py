@@ -39,36 +39,18 @@ PRECISION_RECALL_THRESHOLD_FILE = os.getenv('PRECISION_RECALL_THRESHOLD_FILE', '
 # 這些欄位在訓練和預測時要排除
 NON_FEATURE_COLS = ['timestamp','label', 'fear_greed_level']
 
-# 前30名特徵 透過分析模型重要性後選擇
-SELECTED_FEATURES = [
-    'atr_14',
-    'bb_middle',
-    'price_vs_sma50_volume',
-    'close',
-    'bb_lower',
-    'bb_std',
-    'sma_20',
-    'ema_10',
-    'fg_ema_3',
-    'bb_percent_b',
-    'sma_100',
-    'fg_ema_7',
-    'bb_upper',
-    'weekday_sin',
-    'fear_greed_label',
-    'low',
-    'sma_50',
-    'volume',
-    'weekday',
-    'macd_signal',
-    'sma_convergence',
-    'fear_greed_value',
-    'price_vs_sma20',
-    'macd_line',
-    'volume_ma_20',
-    'hour_cos',
-    'hour',
-    'high',
-    'macd_hist_lag_1',
-    'greed_high_then_macd_drop'
+# 選取特徵
+TOP_SELECTED_FEATURES_30 = [
+    'atr_14', 'CPIAUCSL', 'price_vs_sma50_volume', 'PCEPILFE', 'ema_10',
+    'PCEPI', 'bb_std', 'fg_ema_3', 'CPILFESL', 'weekday_sin',
+    'sma_20', 'fg_ema_7', 'close_lag_1', 'FEDFUNDS', 'sma_100',
+    'low', 'bb_upper', 'weekday', 'fear_greed_label', 'close',
+    'bb_lower', 'price_vs_sma20', 'sma_50', 'macd_signal', 'volume',
+    'hour_cos', 'fg_zscore_30', 'hour', 'bb_middle', 'volume_ma_20'
+]
+
+TOP_SELECTED_FEATURES_40 = TOP_SELECTED_FEATURES_30 + [
+    'rsi_14_lag_1', 'open_zscore', 'sma_convergence', 'fear_greed_value',
+    'candle_body', 'bb_distance', 'macd_line', 'high_zscore', 'low_zscore',
+    'ema_10_diff'
 ]

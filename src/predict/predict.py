@@ -4,7 +4,7 @@ import xgboost as xgb
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 
-from src.config import TEST_DIR, TEST_FILE, MODEL_DIR, SELECTED_FEATURES, OUTPUT_PREDICT_DIR, OUTPUT_PREDICT_FILE, NON_FEATURE_COLS
+from src.config import TEST_DIR, TEST_FILE, MODEL_DIR, OUTPUT_PREDICT_DIR, OUTPUT_PREDICT_FILE, NON_FEATURE_COLS , TOP_SELECTED_FEATURES_30
 
 
 def load_test_data():
@@ -20,7 +20,7 @@ def load_test_data():
     df = pd.read_csv(test_path)
     
     y_true = df['label'] if 'label' in df.columns else None
-    X_test = df[SELECTED_FEATURES]
+    X_test = df[TOP_SELECTED_FEATURES_30]
 
     # df = df.drop(columns=NON_FEATURE_COLS)
     # print('移除非特徵欄位:', NON_FEATURE_COLS)

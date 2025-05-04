@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
-from src.config import TRAIN_DIR, TRAIN_FILE , NON_FEATURE_COLS, SELECTED_FEATURES
+from src.config import TRAIN_DIR, TRAIN_FILE , NON_FEATURE_COLS, TOP_SELECTED_FEATURES_30
 from imblearn.over_sampling import SMOTE
 from src.analysis.feature_analysis import save_feature_importance_csv
 from src.train.timeseries_cv_search import cross_validate_xgboost_with_early_stopping
@@ -19,7 +19,7 @@ def load_train_data():
     df = pd.read_csv(train_path)
 
     y = df['label']
-    X = df[SELECTED_FEATURES]
+    X = df[TOP_SELECTED_FEATURES_30]
     
     # feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
     print(f"✅ 初步載入資料，共 {df.shape[0]} 筆，欄位數量 {df.shape[1]} 個")

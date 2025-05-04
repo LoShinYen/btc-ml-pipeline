@@ -5,8 +5,8 @@ from src.processing.generate_feature import main as load_generate_feature
 
 def prepare_training_data():
     load_ferd()
-    load_kline_data()
-    load_fear_greed()
+    # load_kline_data()
+    # load_fear_greed()
     load_generate_feature()
 
 def main():
