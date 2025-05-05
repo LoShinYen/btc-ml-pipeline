@@ -137,3 +137,8 @@ python main.py
 * 提交Issue報告問題或建議功能
 * Fork專案並提交Pull Request
 * 聯繫作者討論合作機會
+
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](./LICENSE) file for details.
