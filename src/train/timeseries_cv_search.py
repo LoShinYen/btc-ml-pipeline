@@ -17,6 +17,20 @@ def cross_validate_xgboost_with_early_stopping(
     n_splits=5,
     metric='aucpr'
 ):
+    """
+    時序交叉驗證搜尋最佳參數
+
+    Args:
+        X (pd.DataFrame): 訓練資料
+        y (pd.Series): 訓練資料的標籤
+        param_grid_dict (dict): 參數搜尋空間
+        base_params (dict): 基礎參數
+        n_splits (int): 交叉驗證的折數
+        metric (str): 評估指標
+
+    Returns:
+        dict: 最佳參數
+    """
     tscv = TimeSeriesSplit(n_splits=n_splits)
     best_score = -np.inf
     best_params = None
@@ -46,8 +60,6 @@ def cross_validate_xgboost_with_early_stopping(
             model.fit(
                 X_train, y_train,
                 eval_set=[(X_val, y_val)],
-                # early_stopping_rounds=50,
-                # eval_metric=metric,
                 verbose=False
             )
 

@@ -2,9 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import train_test_split
-from src.config import TRAIN_DIR, TRAIN_FILE , NON_FEATURE_COLS, TOP_SELECTED_FEATURES_30
-from imblearn.over_sampling import SMOTE
+from src.config import TRAIN_DIR, TRAIN_FILE , NON_FEATURE_COLS, TOP_SELECTED_FEATURES_30 , TOP_SELECTED_FEATURES_40
 from src.analysis.feature_analysis import save_feature_importance_csv
 from src.train.timeseries_cv_search import cross_validate_xgboost_with_early_stopping
 
@@ -19,12 +17,13 @@ def load_train_data():
     df = pd.read_csv(train_path)
 
     y = df['label']
-    X = df[TOP_SELECTED_FEATURES_30]
+    X = df[TOP_SELECTED_FEATURES_40]
     
     # feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
-    print(f"✅ 初步載入資料，共 {df.shape[0]} 筆，欄位數量 {df.shape[1]} 個")
     # print(f"✅ 特徵欄位：{feature_cols}")
     # X = df[feature_cols]
+    
+    print(f"✅ 初步載入資料，共 {df.shape[0]} 筆，欄位數量 {df.shape[1]} 個")
 
     return X, y
 
@@ -37,11 +36,10 @@ def train_xgboost_with_cv(X, y):
     Returns:
         model: 訓練完成的最佳模型
     """
-    smote = SMOTE(random_state=42)
-    X, y = smote.fit_resample(X, y)
-    X['__index__'] = np.arange(len(X))
-    X = X.sort_values('__index__').drop(columns='__index__')
-    y = y.loc[X.index]
+    # ✅ 時序切分（保留前 80%）
+    split_index = int(len(X) * 0.8)
+    X_train, X_val = X.iloc[:split_index], X.iloc[split_index:]
+    y_train, y_val = y.iloc[:split_index], y.iloc[split_index:]
     
     base_params  = {
         'objective': 'binary:logistic',
@@ -49,16 +47,16 @@ def train_xgboost_with_cv(X, y):
         'scale_pos_weight': 1,
         'early_stopping_rounds': 50,
         'random_state': 42,
-        # 'verbose': 100
+        "scale_pos_weight" : 12.6
     }
 
     # 超參數搜尋空間
     param_grid_dict  = {
-        'max_depth': [5, 6],
-        'learning_rate': [0.01, 0.05],
-        'n_estimators': [500, 1000],
-        'subsample': [0.8],
-        'colsample_bytree': [0.8, 1.0]
+        'max_depth': [5, 6 ,7],
+        'learning_rate': [0.01, 0.02, 0.03],
+        'n_estimators': [500, 700, 1000],
+        'subsample': [0.8, 0.9, 1.0],
+        'colsample_bytree': [0.8, 0.9, 1.0]
     }
     
     print(f"✅ 開始進行 TimeSeriesSplit 搜尋最佳參數")
@@ -75,9 +73,6 @@ def train_xgboost_with_cv(X, y):
     
     # ⭐ 建立一個新的 final_model
     final_model = xgb.XGBClassifier( **base_params, **best_params)
-
-    # 切分 Train/Val
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.1, shuffle=False)
     
     final_model.fit(
         X_train,
@@ -91,8 +86,6 @@ def train_xgboost_with_cv(X, y):
     return final_model
 
 def train_xgboost_fast(X, y):
-    from imblearn.over_sampling import SMOTE
-
     # ✅ 時序切分（保留前 80%）
     split_index = int(len(X) * 0.8)
     X_train, X_val = X.iloc[:split_index], X.iloc[split_index:]
@@ -102,11 +95,11 @@ def train_xgboost_fast(X, y):
     params = {
         'objective': 'binary:logistic',
         'eval_metric': 'aucpr',
-        'max_depth': 7,
-        'learning_rate': 0.03,
-        'n_estimators': 1500,
-        'subsample': 0.8,
-        'colsample_bytree': 0.8,
+        'max_depth': 5,
+        'learning_rate': 0.01,
+        'n_estimators': 700,
+        'subsample': 0.9,
+        'colsample_bytree': 0.9,
         'scale_pos_weight': 1,
         'early_stopping_rounds': 50,
         'random_state': 42,
