@@ -45,7 +45,7 @@ btc-ml-pipeline/
 * 鏈上交易: `tx_count`, `tx_count_ma_30`, `tx_count_ma_90`
 * 鏈上費用: `tx_fees`, `tx_fees_ma_30`, `tx_fees_ma_90`
 
-> 鏈上數據來源於 [CoinMetrics Data](https://github.com/coinmetrics/data)，使用者需自行下載並放置於 `data/onchain/` 目錄下。
+> 鏈上數據來源於 [CoinMetrics Data](https://github.com/coinmetrics/data)，使用者需自行下載並放置於 `data/raw/` 目錄下。
 
 ## 特徵重要性分類
 
