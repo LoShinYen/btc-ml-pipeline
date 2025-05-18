@@ -3,7 +3,20 @@ import time
 import pandas as pd
 import numpy as np
 
-from src.config import RAW_DIR, PROCESSED_DIR, TRAIN_DIR, TEST_DIR, KLINE_ONE_H_RAW_FILE, PROCESSED_FILE, TRAIN_FILE, TEST_FILE, FEAR_GREED_RAW_FILE, FERD_FILE
+from src.config import (
+    RAW_DIR,
+    PROCESSED_DIR, 
+    TRAIN_DIR, 
+    TEST_DIR, 
+    KLINE_ONE_H_RAW_FILE, 
+    PROCESSED_FILE, 
+    TRAIN_FILE, 
+    TEST_FILE, 
+    FEAR_GREED_RAW_FILE,
+    FERD_FILE,
+    BTC_ONCHAIN_FILE,
+    SELECTED_INITIAL_FEATURES
+)
 
 def check_dir():
     """
@@ -14,16 +27,26 @@ def check_dir():
     os.makedirs(TRAIN_DIR, exist_ok=True)
     os.makedirs(TEST_DIR, exist_ok=True)
 
-def load_raw_data():
+def load_raw_data(raw_dir, raw_file_name):
+    """
+    載入原始資料。
+    """
+    raw_path = os.path.join(raw_dir, raw_file_name)
+    raw_df = pd.read_csv(raw_path)
+    
+    return raw_df
+
+def load_raw_kline_data():
     """
     載入 BTC 原始 K 線資料。
     Returns:
         pd.DataFrame: 含時間戳與價格資訊之 K 線資料。
     """
-    raw_path = os.path.join(RAW_DIR, KLINE_ONE_H_RAW_FILE)
-    raw_df = pd.read_csv(raw_path)
+    raw_df = load_raw_data(RAW_DIR, KLINE_ONE_H_RAW_FILE)
+    
     raw_df['timestamp'] = pd.to_datetime(raw_df['timestamp'])
     print(f"讀取 {len(raw_df)} 筆 raw 資料")
+    
     return raw_df
 
 def prepare_training_data(raw_df):
@@ -42,6 +65,8 @@ def prepare_training_data(raw_df):
     # 使用 forward-fill 將其延伸至每小時，對齊 BTC 資料時間。
     raw_df = merge_macro_data(raw_df)   
 
+    # 合併 BTC 鏈上宏觀資料
+    raw_df = merge_btc_onchain(raw_df)
 
     # 對 BTC 1hr K 線資料執行完整特徵工程，涵蓋技術分析指標、成交量、K 線形態、
     raw_df = feature_engineering(raw_df)
@@ -73,9 +98,8 @@ def merge_fear_greed(df):
     Returns:
         pd.DataFrame: 加入 fear_greed_value, fear_greed_level, fear_greed_label 的資料。
     """
-    fg_path = os.path.join(RAW_DIR, FEAR_GREED_RAW_FILE)
-    fg_df = pd.read_csv(fg_path)
-
+    fg_df = load_raw_data(RAW_DIR, FEAR_GREED_RAW_FILE)
+    
     # 轉換為 datetime（保留 UTC）
     fg_df['date'] = pd.to_datetime(fg_df['date'], utc=True)
 
@@ -114,9 +138,8 @@ def merge_macro_data(df):
     合併 FRED 提供的每月宏觀經濟資料（CPI, PCE, FEDFUNDS 等），
     使用 forward-fill 將其延伸至每小時，對齊 BTC 資料時間。
     """
-    macro_path = os.path.join(RAW_DIR, FERD_FILE)
-    macro_df = pd.read_csv(macro_path)
-
+    macro_df = load_raw_data(RAW_DIR, FERD_FILE)
+    
     # 轉為 datetime 並保留 UTC
     macro_df.rename(columns={macro_df.columns[0]: "date"}, inplace=True)
     macro_df['date'] = pd.to_datetime(macro_df['date'], utc=True)
@@ -135,6 +158,45 @@ def merge_macro_data(df):
     # 合併到主資料上
     df = pd.merge(df, macro_hourly, on="timestamp", how="left")
     return df
+
+def merge_btc_onchain(df):
+    """
+    合併 BTC 鏈上每日資料至小時級 K 線資料。
+    
+    Args:
+        df (pd.DataFrame): 含 timestamp 欄位之 BTC 1H K 線資料。
+    
+    Returns:
+        pd.DataFrame: 加入 onchain 特徵後的資料。
+    """
+    # 載入 BTC onchain 原始資料
+    onchain_df = load_raw_data(RAW_DIR, BTC_ONCHAIN_FILE)
+    
+    # 修正欄位名稱錯誤（CSV 原始欄位是 time）
+    onchain_df.rename(columns={"time": "date"}, inplace=True)
+    
+    # 將日期轉為 UTC 格式
+    onchain_df['date'] = pd.to_datetime(onchain_df['date'], utc=True)
+
+    # 抓出你選的特徵（包含 date）
+    selected_features = onchain_df[['date'] + SELECTED_INITIAL_FEATURES]
+
+    # 設為索引便於對齊
+    selected_features = selected_features.set_index('date')
+
+    # 建立小時時間序列
+    hourly_index = pd.date_range(df['timestamp'].min(), df['timestamp'].max(), freq='h', tz='UTC')
+    hourly_df = pd.DataFrame({'timestamp': hourly_index})
+    hourly_df = hourly_df.set_index('timestamp')
+
+    # forward fill daily 資料 → 每小時對應最近那天
+    merged_hourly = hourly_df.join(selected_features, how='left')
+    merged_hourly = merged_hourly.ffill().reset_index()
+
+    # 合併回原 df
+    merged_df = pd.merge(df, merged_hourly, on='timestamp', how='left')
+    
+    return merged_df
 
 def feature_engineering(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -317,10 +379,10 @@ def main():
         check_dir()
 
         # step 2: 載入原始資料
-        raw_df = load_raw_data()
+        raw_kline_df = load_raw_kline_data()
 
         # step 3: 處理資料
-        df = prepare_training_data(raw_df)
+        df = prepare_training_data(raw_kline_df)
 
         # step 4: 儲存處理後資料
         save_processed_data(df)

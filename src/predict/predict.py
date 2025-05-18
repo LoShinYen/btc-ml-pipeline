@@ -1,10 +1,12 @@
 import os
 import pandas as pd
 import xgboost as xgb
-import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 
-from src.config import TEST_DIR, TEST_FILE, MODEL_DIR, OUTPUT_PREDICT_DIR, OUTPUT_PREDICT_FILE, NON_FEATURE_COLS , TOP_SELECTED_FEATURES_30 , TOP_SELECTED_FEATURES_40
+from src.config import (
+    TEST_DIR, TEST_FILE, MODEL_DIR, OUTPUT_PREDICT_DIR, OUTPUT_PREDICT_FILE, 
+    NON_FEATURE_COLS , SELECTED_FEATURES
+)
 
 
 def load_test_data():
@@ -20,13 +22,15 @@ def load_test_data():
     df = pd.read_csv(test_path)
     
     y_true = df['label'] if 'label' in df.columns else None
-    X_test = df[TOP_SELECTED_FEATURES_40]
+    # X_test = df[SELECTED_FEATURES]
 
-    # print(f"✅ 移除非特徵欄位: {NON_FEATURE_COLS}")
-    # feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
-    # X_test = df[feature_cols]
+    print(f"✅ 移除非特徵欄位: {NON_FEATURE_COLS}")
+    feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
+    X_test = df[feature_cols]
 
-    print(f"✅ 初步載入資料，共 {df.shape[0]} 筆，欄位數量 {df.shape[1]} 個")
+    file_count = X_test.shape[0]
+    feature_count = X_test.shape[1]
+    print(f"✅ 初步載入資料，共 {file_count} 筆，欄位數量 {feature_count} 個")
 
     return X_test, y_true, df
 

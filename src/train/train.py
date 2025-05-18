@@ -1,10 +1,13 @@
 import os
-import numpy as np
 import pandas as pd
 import xgboost as xgb
-from src.config import TRAIN_DIR, TRAIN_FILE , NON_FEATURE_COLS, TOP_SELECTED_FEATURES_30 , TOP_SELECTED_FEATURES_40
 from src.analysis.feature_analysis import save_feature_importance_csv
 from src.train.timeseries_cv_search import cross_validate_xgboost_with_early_stopping
+
+from src.config import (
+    TRAIN_DIR, TRAIN_FILE ,
+    NON_FEATURE_COLS, SELECTED_FEATURES
+)
 
 def load_train_data():
     """
@@ -17,13 +20,16 @@ def load_train_data():
     df = pd.read_csv(train_path)
 
     y = df['label']
-    X = df[TOP_SELECTED_FEATURES_40]
+    # X = df[SELECTED_FEATURES]
     
-    # feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
-    # print(f"✅ 特徵欄位：{feature_cols}")
-    # X = df[feature_cols]
+    feature_cols = [col for col in df.columns if col not in NON_FEATURE_COLS]
+    print(f"✅ 特徵欄位：{feature_cols}")
+    X = df[feature_cols]
     
-    print(f"✅ 初步載入資料，共 {df.shape[0]} 筆，欄位數量 {df.shape[1]} 個")
+    file_count = X.shape[0]
+    feature_count = X.shape[1]
+    
+    print(f"✅ 初步載入資料，共 {file_count} 筆，欄位數量 {feature_count} 個")
 
     return X, y
 
