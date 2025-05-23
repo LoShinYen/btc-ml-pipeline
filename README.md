@@ -25,7 +25,7 @@ btc-ml-pipeline/
     └── config.py         # 中央配置：系統參數與路徑管理
 ```
 
-## 核心技術棟
+## 核心技術
 
 * **Data Processing**: Pandas 2.2.2 用於高效數據處理與轉換
 * **Exchange API**: CCXT 4.1.48 提供標準化交易所接口
